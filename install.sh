@@ -1,5 +1,5 @@
 #!/bin/zsh
-# it2s installer for the parts a plugin manager does not cover: the CLI on PATH, Codex hooks, the /ops prompt for Codex.
+# it2s installer for the parts a plugin manager does not cover: the CLI on PATH, Codex hooks, the $it2s-ops prompt for Codex.
 # Claude Code users: `claude plugin marketplace add Todmy/it2s && claude plugin install it2s@it2s` handles skill + command + hooks;
 # still run this once for the CLI. Codex users: `codex plugin marketplace add Todmy/it2s --ref main && codex plugin add it2s@it2s`
 # installs the skill; this script adds the CLI, hooks and the $it2s-ops prompt.
@@ -27,6 +27,6 @@ PY
   echo "Codex: skill + \$it2s-ops prompt linked. Enable hooks in ~/.codex/config.toml: [features] hooks = true"
 fi
 if [[ -d ~/.claude && ! -d ~/.claude/plugins/cache/it2s ]]; then
-  echo "Claude Code without the plugin? Then also: ln -s $HERE/skills/it2s-watch ~/.claude/skills/ ; ln -s $HERE/commands/ops.md ~/.claude/commands/ops.md ; and merge hooks/hooks.json into ~/.claude/settings.json with \${CLAUDE_PLUGIN_ROOT} replaced by $HERE"
+  echo "Claude Code without the plugin? Then also: ln -s $HERE/skills/it2s-watch ~/.claude/skills/ ; ln -s $HERE/commands/it2s-ops.md ~/.claude/commands/it2s-ops.md ; and merge hooks/hooks.json into ~/.claude/settings.json with \${CLAUDE_PLUGIN_ROOT} replaced by $HERE"
 fi
 it2s list >/dev/null && echo "it2s works: $(it2s list | wc -l | tr -d ' ') sessions visible" || echo "it2s cannot reach iTerm2: enable Settings → General → Magic → Python API"
