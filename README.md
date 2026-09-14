@@ -28,8 +28,8 @@ No plugin manager: `git clone` and `./install.sh`, then follow what it prints.
 |---|---|---|
 | `it2s` CLI | `bin/` | `list`, `read`, `send`, `key`, `wait`, `status`, `alerts`, `spawn`, `tag` |
 | registry hook | `bin/it2s-hook` + `hooks/` | every session writes agent, cwd, last prompt, last answer, waiting/error state to `~/.local/state/it2s/sessions.json` |
-| skill | `skills/watching-iterm-sessions` | how an agent should watch and drive other sessions (busy/idle table, supervisor loop, pitfalls) |
-| `/ops` (Claude) · `$ops` (Codex) | `commands/ops.md` | one supervisor cycle; `/loop 5m /ops` makes it the "god session" |
+| skill | `skills/it2s-watch` | how an agent should watch and drive other sessions (busy/idle table, supervisor loop, pitfalls) |
+| `/it2s:it2s-ops` (Claude) · `$it2s-ops` (Codex) | `commands/it2s-ops.md` | one supervisor cycle; `/loop 5m /it2s:it2s-ops` makes it the "god session" |
 
 ```
 it2s status

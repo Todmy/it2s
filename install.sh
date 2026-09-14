@@ -2,7 +2,7 @@
 # it2s installer for the parts a plugin manager does not cover: the CLI on PATH, Codex hooks, the /ops prompt for Codex.
 # Claude Code users: `claude plugin marketplace add Todmy/it2s && claude plugin install it2s@it2s` handles skill + command + hooks;
 # still run this once for the CLI. Codex users: `codex plugin marketplace add Todmy/it2s --ref main && codex plugin add it2s@it2s`
-# installs the skill; this script adds the CLI, hooks and the $ops prompt.
+# installs the skill; this script adds the CLI, hooks and the $it2s-ops prompt.
 set -e
 HERE="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 mkdir -p ~/.local/bin ~/.local/state/it2s
@@ -11,8 +11,8 @@ ln -sfn "$HERE/bin/it2s-hook" ~/.local/bin/it2s-hook
 echo "CLI: ~/.local/bin/it2s -> $HERE/bin/it2s  (make sure ~/.local/bin is on PATH)"
 if [[ -d ~/.codex ]]; then
   mkdir -p ~/.codex/prompts ~/.codex/skills
-  ln -sfn "$HERE/commands/ops.md" ~/.codex/prompts/ops.md
-  [[ -e ~/.codex/skills/watching-iterm-sessions ]] || ln -s "$HERE/skills/watching-iterm-sessions" ~/.codex/skills/watching-iterm-sessions
+  ln -sfn "$HERE/commands/it2s-ops.md" ~/.codex/prompts/it2s-ops.md
+  [[ -e ~/.codex/skills/it2s-watch ]] || ln -s "$HERE/skills/it2s-watch" ~/.codex/skills/it2s-watch
   python3 - "$HERE/hooks/hooks-codex.json" <<'PY'
 import json, os, sys
 src = json.load(open(sys.argv[1]))["hooks"]; path = os.path.expanduser("~/.codex/hooks.json")
@@ -24,9 +24,9 @@ for ev, entries in src.items():
     lst.extend(entries); added.append(ev)
 json.dump(d, open(path, "w"), indent=2); print("Codex hooks added:", added or "already present")
 PY
-  echo "Codex: skill + \$ops prompt linked. Enable hooks in ~/.codex/config.toml: [features] hooks = true"
+  echo "Codex: skill + \$it2s-ops prompt linked. Enable hooks in ~/.codex/config.toml: [features] hooks = true"
 fi
 if [[ -d ~/.claude && ! -d ~/.claude/plugins/cache/it2s ]]; then
-  echo "Claude Code without the plugin? Then also: ln -s $HERE/skills/watching-iterm-sessions ~/.claude/skills/ ; ln -s $HERE/commands/ops.md ~/.claude/commands/ops.md ; and merge hooks/hooks.json into ~/.claude/settings.json with \${CLAUDE_PLUGIN_ROOT} replaced by $HERE"
+  echo "Claude Code without the plugin? Then also: ln -s $HERE/skills/it2s-watch ~/.claude/skills/ ; ln -s $HERE/commands/ops.md ~/.claude/commands/ops.md ; and merge hooks/hooks.json into ~/.claude/settings.json with \${CLAUDE_PLUGIN_ROOT} replaced by $HERE"
 fi
 it2s list >/dev/null && echo "it2s works: $(it2s list | wc -l | tr -d ' ') sessions visible" || echo "it2s cannot reach iTerm2: enable Settings → General → Magic → Python API"

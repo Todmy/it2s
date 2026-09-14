@@ -1,5 +1,5 @@
 ---
-name: watching-iterm-sessions
+name: it2s-watch
 description: Use when asked to watch, supervise, coordinate, or send input to other iTerm2 windows/tabs or other agents (Claude Code, Codex, a shell) running on this Mac. Triggers: "що робить codex", "слідкуй за сесіями", "подивись у сусідньому вікні", "відправ у ту сесію", "one agent that controls the others", "what is the other terminal doing", "wait until that tab finishes".
 ---
 
@@ -77,7 +77,7 @@ Every Claude Code and Codex session writes its own state through the `it2s-hook`
 | Start a worker | `it2s spawn <name> <cmd...>` → new tab in the caller's cwd, runs cmd, registers purpose + parent = caller, prints session id |
 | Label a session | `it2s tag <match> purpose="..." name=...` → fields the supervisor reads back in `status` |
 
-A supervisor cycle is `alerts` → `read` each alerted id → one action or one escalation per session. `/ops` (Claude) and `$ops` (Codex) are that cycle written down; `/loop 5m /ops` runs it continuously.
+A supervisor cycle is `alerts` → `read` each alerted id → one action or one escalation per session. `/it2s:it2s-ops` (Claude) and `$it2s-ops` (Codex) are that cycle written down; `/loop 5m /it2s:it2s-ops` runs it continuously.
 
 ## Install / Repair
 

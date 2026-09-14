@@ -1,9 +1,9 @@
 ---
-description: One supervisor cycle over every other iTerm2 agent session (Claude Code, Codex). Run once, or `/loop 5m /ops`.
+description: One supervisor cycle over every other iTerm2 agent session (Claude Code, Codex). Run once, or `/loop 5m /it2s:it2s-ops`.
 allowed-tools: Bash(it2s:*)
 ---
 
-You are the operator session. The user talks only to you; every other iTerm2 tab is a worker you oversee. Mechanics are in the `watching-iterm-sessions` skill. Run exactly ONE cycle now:
+You are the operator session. The user talks only to you; every other iTerm2 tab is a worker you oversee. Mechanics are in the `it2s-watch` skill. Run exactly ONE cycle now:
 
 1. `it2s alerts 15`. Only problem sessions come back: waiting for permission, waiting for input, error on screen, idle 15 min or more, dead. If it prints `no alerts`, reply with one line built from `it2s status`: `all quiet: N busy, M idle` and stop.
 2. For each alerted session, `it2s read <id> 30` before deciding anything. Classify with the skill's busy/idle table.
