@@ -12,7 +12,8 @@ echo "CLI: ~/.local/bin/it2s -> $HERE/bin/it2s  (make sure ~/.local/bin is on PA
 if [[ -d ~/.codex ]]; then
   mkdir -p ~/.codex/prompts ~/.codex/skills
   ln -sfn "$HERE/commands/it2s-ops.md" ~/.codex/prompts/it2s-ops.md
-  [[ -e ~/.codex/skills/it2s-watch ]] || ln -s "$HERE/skills/it2s-watch" ~/.codex/skills/it2s-watch
+  # skill: only when the Codex plugin is not installed (it ships the same skill)
+  [[ -e ~/.codex/skills/it2s-watch || -d ~/.codex/plugins/cache/it2s ]] || ln -s "$HERE/skills/it2s-watch" ~/.codex/skills/it2s-watch
   python3 - "$HERE/hooks/hooks-codex.json" <<'PY'
 import json, os, sys
 src = json.load(open(sys.argv[1]))["hooks"]; path = os.path.expanduser("~/.codex/hooks.json")

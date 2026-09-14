@@ -62,11 +62,12 @@ Open a second tab, start `claude` or `codex`, and in the first tab ask your agen
 ### Update / uninstall
 
 ```bash
-git -C ~/github/it2s pull && claude plugin update it2s@it2s      # Claude
-git -C ~/github/it2s pull && codex plugin remove it2s && codex plugin add it2s@it2s   # Codex
+git -C ~/github/it2s pull                                                  # CLI
+claude plugin marketplace update it2s && claude plugin update it2s@it2s   # Claude
+codex plugin marketplace upgrade it2s && codex plugin add it2s@it2s       # Codex
 ```
 
-Uninstall: `claude plugin uninstall it2s@it2s`, `codex plugin remove it2s`, delete the `it2s-hook` entries from `~/.codex/hooks.json`, `rm ~/.local/bin/it2s ~/.local/bin/it2s-hook ~/.codex/prompts/it2s-ops.md ~/.codex/skills/it2s-watch`.
+Uninstall: `claude plugin uninstall it2s@it2s`, `codex plugin remove it2s@it2s`, delete the `it2s-hook` entries from `~/.codex/hooks.json`, `rm ~/.local/bin/it2s ~/.local/bin/it2s-hook ~/.codex/prompts/it2s-ops.md ~/.codex/skills/it2s-watch`.
 
 ## What you get
 
