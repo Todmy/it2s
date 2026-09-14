@@ -66,6 +66,19 @@ Stop and ask the user when: a session asks a yes/no permission question you were
 | Matching too loosely (`claude` hits three tabs) | Use the id from `list`, or a title substring unique to that tab. |
 | Acting on a stale screen | Always `read` immediately before `send`. |
 
+## Registry, status, alerts
+
+Every Claude Code and Codex session writes its own state through the `it2s-hook` hook into `~/.local/state/it2s/sessions.json`: agent, cwd, purpose, parent, last prompt, last answer, `waiting` (permission / input), `error`, timestamps. Screen scraping is the fallback; the registry is the primary signal.
+
+| Need | Command |
+|---|---|
+| Everything at a glance | `it2s status` → one row per session: name, agent, state (`busy` / `idle` / `waiting:permission` / `waiting:input` / `dead`), minutes since last event, last answer or waiting text or error |
+| Only what needs attention | `it2s alerts [idle_min]` → same rows filtered to waiting, error, dead, or idle ≥ N min (default 15). Exit 1 when non-empty, so it works as a gate. |
+| Start a worker | `it2s spawn <name> <cmd...>` → new tab in the caller's cwd, runs cmd, registers purpose + parent = caller, prints session id |
+| Label a session | `it2s tag <match> purpose="..." name=...` → fields the supervisor reads back in `status` |
+
+A supervisor cycle is `alerts` → `read` each alerted id → one action or one escalation per session. `/ops` (Claude) and `$ops` (Codex) are that cycle written down; `/loop 5m /ops` runs it continuously.
+
 ## Install / Repair
 
-Files: `~/.local/bin/it2s` (zsh shim) and `~/.local/bin/it2s.py` (source, ~50 lines). Requirements: iTerm2 with Python API enabled (Settings → General → Magic → Enable Python API) and iTerm2's bundled runtime at `~/Library/Application Support/iTerm2/iterm2env-3.14/versions/3.10.19/bin/python3`. If the runtime path moved, update the one path in the shim. If `it2s list` hangs 10 s then prints, the shim lost its `os._exit(0)` at the end of `main`.
+Repo: `~/github/it2s` (plugin for Claude Code and Codex; `install.sh` puts the CLI on PATH and registers Codex hooks). Files: `bin/it2s` (zsh shim, finds the newest iTerm2 Python runtime under `~/Library/Application Support/iTerm2/iterm2env*`), `bin/it2s.py` (source), `bin/it2s-hook` (registry writer), `hooks/hooks.json` (Claude) and `hooks/hooks-codex.json` (Codex). Requirement: iTerm2 with Settings → General → Magic → Enable Python API. If `it2s list` hangs 10 s then prints, `os._exit(0)` at the end of `main` was lost. If `status` shows `-m` idle for an agent session, its hooks are not registered: rerun `install.sh` (Codex) or reinstall the plugin (Claude).
