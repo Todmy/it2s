@@ -1,5 +1,6 @@
 ---
-description: One supervisor cycle over every other iTerm2 agent session (Claude Code, Codex). Run once, or `/loop 5m /it2s:it2s-ops`.
+name: it2s-ops
+description: One supervisor cycle over every other iTerm2 agent session (Claude Code, Codex). Invoke as `/it2s:it2s-ops` (Claude Code) or `$it2s-ops` (Codex); `/loop 5m /it2s:it2s-ops` makes it the god session.
 allowed-tools: Bash(it2s:*)
 ---
 
