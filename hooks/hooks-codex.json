@@ -1,76 +1,10 @@
 {
   "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/todmy/.local/bin/it2s-hook",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/todmy/.local/bin/it2s-hook",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/todmy/.local/bin/it2s-hook",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "PermissionRequest": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/todmy/.local/bin/it2s-hook",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "Interrupt": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/todmy/.local/bin/it2s-hook",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/todmy/.local/bin/it2s-hook",
-            "timeout": 5
-          }
-        ]
-      }
-    ]
+    "SessionStart":     [{ "matcher": "", "hooks": [{ "type": "command", "command": "~/.local/bin/it2s-hook", "timeout": 5 }] }],
+    "UserPromptSubmit": [{ "matcher": "", "hooks": [{ "type": "command", "command": "~/.local/bin/it2s-hook", "timeout": 5 }] }],
+    "Stop":             [{ "matcher": "", "hooks": [{ "type": "command", "command": "~/.local/bin/it2s-hook", "timeout": 5 }] }],
+    "PermissionRequest":[{ "matcher": "", "hooks": [{ "type": "command", "command": "~/.local/bin/it2s-hook", "timeout": 5 }] }],
+    "Interrupt":        [{ "matcher": "", "hooks": [{ "type": "command", "command": "~/.local/bin/it2s-hook", "timeout": 3 }] }],
+    "SessionEnd":       [{ "matcher": "", "hooks": [{ "type": "command", "command": "~/.local/bin/it2s-hook", "timeout": 3 }] }]
   }
 }
