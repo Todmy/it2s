@@ -1,0 +1,9 @@
+{
+  "name": "it2s",
+  "description": "Let one agent session watch, drive, and supervise every other iTerm2 tab (Claude Code, Codex, shells): it2s CLI, session registry hooks, watching-iterm-sessions skill, /ops loop.",
+  "version": "0.1.0",
+  "author": { "name": "Dmytro Tolok" },
+  "repository": "https://github.com/Todmy/it2s",
+  "license": "MIT",
+  "keywords": ["iterm2", "codex", "claude-code", "agents", "orchestration", "supervisor"]
+}

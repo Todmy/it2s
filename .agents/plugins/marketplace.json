@@ -1,0 +1,10 @@
+{
+  "name": "it2s",
+  "interface": { "displayName": "it2s" },
+  "plugins": [
+    { "name": "it2s",
+      "source": { "source": "url", "url": "https://github.com/Todmy/it2s.git", "ref": "main" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity" }
+  ]
+}

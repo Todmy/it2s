@@ -1,0 +1,19 @@
+{
+  "name": "it2s",
+  "version": "0.1.0",
+  "description": "Let one Codex/Claude session watch, drive, and supervise every other iTerm2 tab.",
+  "author": { "name": "Dmytro Tolok" },
+  "repository": "https://github.com/Todmy/it2s",
+  "license": "MIT",
+  "keywords": ["iterm2", "codex", "agents", "orchestration"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "it2s",
+    "shortDescription": "Supervise other iTerm2 agent tabs",
+    "longDescription": "CLI + skill that lets one agent session list, read, drive, and wait on every other iTerm2 tab (Claude Code, Codex, shells), with a hook-fed session registry and alerts. Run install.sh once for the CLI and Codex hooks.",
+    "developerName": "Dmytro Tolok",
+    "category": "Productivity",
+    "capabilities": ["Skills"],
+    "defaultPrompt": ["What are my other iTerm2 sessions doing?", "Run one ops cycle over my agent sessions."]
+  }
+}

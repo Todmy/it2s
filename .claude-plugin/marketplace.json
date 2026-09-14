@@ -1,0 +1,9 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "it2s",
+  "description": "iTerm2 session supervisor for agent sessions (Claude Code + Codex).",
+  "owner": { "name": "Dmytro Tolok" },
+  "plugins": [
+    { "name": "it2s", "description": "One agent session that watches and drives all other iTerm2 tabs.", "source": "./", "category": "productivity" }
+  ]
+}

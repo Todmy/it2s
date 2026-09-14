@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+"""Hook for Claude Code and Codex: records this session's state into the it2s registry.
+Registry: ~/.local/state/it2s/sessions.json, keyed by iTerm2 session id. Never blocks the agent."""
+import json, os, sys, time, fcntl
+REG = os.path.expanduser("~/.local/state/it2s/sessions.json")
+try:
+    ev = json.load(sys.stdin)
+except Exception:
+    ev = {}
+sid = os.environ.get("ITERM_SESSION_ID", "").split(":")[-1]
+if not sid:
+    sys.exit(0)
+name = ev.get("hook_event_name") or ev.get("event") or "?"
+now = time.strftime("%Y-%m-%dT%H:%M:%S")
+agent = "claude" if os.environ.get("CLAUDECODE") == "1" else "codex"
+os.makedirs(os.path.dirname(REG), exist_ok=True)
+with open(REG, "a+") as f:
+    fcntl.flock(f, fcntl.LOCK_EX); f.seek(0)
+    try: reg = json.load(f)
+    except Exception: reg = {}
+    r = reg.setdefault(sid, {"first_seen": now, "purpose": "", "parent": ""})
+    r.update(agent=agent, cwd=ev.get("cwd") or r.get("cwd") or os.getcwd(),
+             agent_session=ev.get("session_id") or r.get("agent_session", ""),
+             last_event=name, last_event_at=now)
+    if name == "SessionStart": r.update(started_at=now, ended_at="", waiting="", error="")
+    elif name == "UserPromptSubmit": r.update(last_prompt=(ev.get("prompt") or "")[:160], waiting="", error="", busy=True)
+    elif name == "Stop": r.update(last_message=(ev.get("last_assistant_message") or "")[:240], busy=False)
+    elif name == "Interrupt": r.update(busy=False, waiting="input")
+    elif name in ("Notification", "PermissionRequest"):
+        t = ev.get("notification_type") or ev.get("type") or name
+        r["waiting"] = "permission" if ("permission" in str(t).lower() or name == "PermissionRequest") else "input"
+        r["waiting_text"] = (ev.get("message") or ev.get("title") or json.dumps(ev.get("tool_input", ""))[:160])[:160]
+    elif name == "StopFailure": r.update(error=(ev.get("error") or ev.get("message") or "stop failure")[:200], busy=False)
+    elif name == "SessionEnd": r.update(ended_at=now, busy=False, waiting="")
+    f.seek(0); f.truncate(); json.dump(reg, f, indent=1, ensure_ascii=False)

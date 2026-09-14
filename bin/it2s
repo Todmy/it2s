@@ -1,0 +1,10 @@
+#!/bin/zsh
+# it2s — iTerm2 session control for agents. Runs it2s.py with a python that has the `iterm2` module.
+HERE="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+PY="${IT2S_PYTHON:-}"
+if [[ -z "$PY" ]]; then
+  for p in "$HOME/Library/Application Support/iTerm2"/iterm2env*/versions/*/bin/python3(N); do PY="$p"; done   # last = newest
+fi
+[[ -z "$PY" ]] && python3 -c 'import iterm2' 2>/dev/null && PY=python3
+[[ -z "$PY" ]] && { echo "it2s: no python with the iterm2 module. Enable iTerm2 → Settings → General → Magic → Python API (downloads the runtime), or: pip3 install iterm2" >&2; exit 2; }
+exec "$PY" "$HERE/it2s.py" "$@"
