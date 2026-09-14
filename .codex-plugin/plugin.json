@@ -1,6 +1,6 @@
 {
   "name": "it2s",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Let one Codex/Claude session watch, drive, and supervise every other iTerm2 tab.",
   "author": { "name": "Dmytro Tolok" },
   "repository": "https://github.com/Todmy/it2s",
