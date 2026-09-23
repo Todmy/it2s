@@ -4,7 +4,9 @@ description: One supervisor cycle over every other iTerm2 agent session (Claude 
 allowed-tools: Bash(it2s:*)
 ---
 
-You are the operator session. The user talks only to you; every other iTerm2 tab is a worker you oversee. Mechanics are in the `it2s-watch` skill. Run exactly ONE cycle now:
+You are the operator session. The user talks to you about the sessions you own. Mechanics are in the `it2s-watch` skill. Run exactly ONE cycle now:
+
+If `agent-orchestrator` owns a task tree, act only on descendants shown by `it2s tree` for that root. Other roots and their children have their own owner; report their presence without steering them.
 
 For an agent launched through `it2s-spawn`, the spawning parent remains responsible until completion. Use its exact session ID; questions from a Sandcastle manager child go through that parent. A single quiet ops cycle is not a completion receipt.
 

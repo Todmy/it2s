@@ -15,10 +15,15 @@ now = time.strftime("%Y-%m-%dT%H:%M:%S")
 agent = "claude" if os.environ.get("CLAUDECODE") == "1" else "codex"
 os.makedirs(os.path.dirname(REG), exist_ok=True)
 with open(REG, "a+") as f:
+    os.chmod(REG, 0o600)
     fcntl.flock(f, fcntl.LOCK_EX); f.seek(0)
-    try: reg = json.load(f)
-    except Exception: reg = {}
+    raw = f.read()
+    try: reg = json.loads(raw) if raw.strip() else {}
+    except ValueError:
+        print("it2s-hook: registry is unreadable; event not recorded", file=sys.stderr)
+        sys.exit(0)
     r = reg.setdefault(sid, {"first_seen": now, "purpose": "", "parent": ""})
+    r["event_seq"] = r.get("event_seq", 0) + 1
     r.update(agent=agent, cwd=ev.get("cwd") or r.get("cwd") or os.getcwd(),
              agent_session=ev.get("session_id") or r.get("agent_session", ""),
              last_event=name, last_event_at=now)

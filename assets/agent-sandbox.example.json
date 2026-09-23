@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "name": "example-task",
+  "project": "/absolute/path/to/clean/git/repo",
+  "image": "REPLACE_WITH_EXISTING_SANDBOX_IMAGE",
+  "timeoutMinutes": 60,
+  "parallel": 2,
+  "maxTotalTurns": 6,
+  "workers": [
+    {
+      "id": "option-a",
+      "agent": "codex",
+      "model": "gpt-6-luna",
+      "effort": "medium",
+      "prompt": "Find and implement one solution to the assigned problem.",
+      "scope": ["src/"],
+      "acceptance": "Describe the change and its observable result.",
+      "timeoutMinutes": 45,
+      "maxTurns": 3
+    },
+    {
+      "id": "option-b",
+      "agent": "codex",
+      "model": "gpt-6-luna",
+      "effort": "medium",
+      "prompt": "Independently find and implement a different solution to the same problem.",
+      "scope": ["src/"],
+      "acceptance": "Describe the change and its observable result.",
+      "timeoutMinutes": 45,
+      "maxTurns": 3
+    }
+  ]
+}

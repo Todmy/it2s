@@ -6,12 +6,15 @@
   it2s key <id|substr> esc|enter|ctrl-c       send a control key
   it2s status                  one table: name | agent | state | idle | waiting | last message  (registry + live)
   it2s alerts [idle_min=15]    only problems: permission, error, input-wait, idle>N, dead. Exit 1 if any.
+  it2s watch <id,id,...> [timeout_s]   wait for the next hook event from any named session
+  it2s tree [root-id]          registered descendants and their roles
   it2s spawn <name> <cmd...>   new tab, cd to cwd, run cmd, register purpose/parent; prints session id
   it2s launch <name> claude|codex <model> <effort> <task-file> [cwd]   supervised interactive agent
+  it2s launch --role orchestrator --approval-file <json> <name> claude|codex <model> <effort> <task-file> [cwd]
   it2s tag <id|substr> key=value ...   set registry fields (purpose, name, parent)
 Match = full id or substring of id / title / job name. Never matches itself for send.
 """
-import iterm2, os, re, sys, time, asyncio, json, shlex
+import iterm2, os, re, sys, time, asyncio, json, shlex, fcntl
 ME = os.environ.get("ITERM_SESSION_ID", "").split(":")[-1]
 
 async def rows(app):
@@ -38,15 +41,57 @@ async def screen(s, n):
 
 REG = os.path.expanduser("~/.local/state/it2s/sessions.json")
 def load_reg():
-    try: return json.load(open(REG))
-    except Exception: return {}
-def save_reg(reg):
+    try:
+        with open(REG) as f:
+            fcntl.flock(f, fcntl.LOCK_SH)
+            return json.load(f)
+    except FileNotFoundError: return {}
+    except (OSError, ValueError) as e: sys.exit(f"it2s registry is unreadable: {e}")
+def save_reg(updates):
     os.makedirs(os.path.dirname(REG), exist_ok=True)
-    tmp = REG + ".tmp"; json.dump(reg, open(tmp, "w"), indent=1, ensure_ascii=False); os.replace(tmp, REG)
+    with open(REG, "a+") as f:
+        os.chmod(REG, 0o600)
+        fcntl.flock(f, fcntl.LOCK_EX); f.seek(0)
+        raw = f.read()
+        try: reg = json.loads(raw) if raw.strip() else {}
+        except ValueError as e: sys.exit(f"it2s registry is unreadable: {e}")
+        for sid, fields in updates.items(): reg.setdefault(sid, {}).update(fields)
+        f.seek(0); f.truncate(); json.dump(reg, f, indent=1, ensure_ascii=False)
 def mins_since(ts):
     if not ts: return None
     try: return int((time.time() - time.mktime(time.strptime(ts, "%Y-%m-%dT%H:%M:%S"))) / 60)
     except Exception: return None
+
+def watch_registry(ids, timeout):
+    reg = load_reg()
+    missing = [sid for sid in ids if sid not in reg]
+    if missing: sys.exit("unknown registered session(s): " + ", ".join(missing))
+    seen = {sid: (reg[sid].get("event_seq"), reg[sid].get("last_event_at")) for sid in ids}
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        time.sleep(1)
+        reg = load_reg()
+        for sid in ids:
+            r = reg.get(sid)
+            if not r: continue
+            current = (r.get("event_seq"), r.get("last_event_at"))
+            if current != seen[sid]:
+                print(json.dumps({"id": sid, "event": r.get("last_event"), "seq": r.get("event_seq"),
+                                  "waiting": r.get("waiting", ""), "error": r.get("error", ""),
+                                  "last_message": r.get("last_message", "")}, ensure_ascii=False))
+                return
+    sys.exit("watch timeout; inspect session state before waiting again")
+
+def print_tree(reg, root):
+    seen = set()
+    def visit(sid, prefix=""):
+        if sid in seen: return
+        seen.add(sid)
+        r = reg.get(sid, {})
+        print(f"{prefix}{sid[:8]} {r.get('name', sid[:8])} [{r.get('role', 'root')}] {r.get('model', '')}")
+        for child in sorted((x for x, row in reg.items() if row.get("parent") == sid), key=lambda x: reg[x].get("name", x)):
+            visit(child, prefix + "  ")
+    visit(root)
 PERM = re.compile(r"Do you want to|Allow .*\?|Yes, and don|\(y/n\)|Approve|Proceed\?|esc to cancel", re.I)
 ERR = re.compile(r"Traceback \(most recent|^Error:|FAILED|fatal:|panic:|Uncaught|ECONNREFUSED", re.M)
 
@@ -102,6 +147,13 @@ async def main(conn):
         else: sys.exit("timeout")
     elif cmd == "status":
         print_table(await snapshot(app, load_reg()))
+    elif cmd == "tree":
+        if len(a) > 1: sys.exit("usage: it2s tree [root-id]")
+        root = a[0] if a else ME
+        if not root: sys.exit("tree requires a root session id outside iTerm2")
+        reg = load_reg()
+        if root not in reg: sys.exit("root session is not registered")
+        print_tree(reg, root)
     elif cmd == "alerts":
         lim = int(a[0]) if a else 15
         bad = [x for x in await snapshot(app, load_reg()) if not x["me"] and x["agent"] != "shell" and
@@ -109,10 +161,34 @@ async def main(conn):
         if bad: print_table(bad); sys.stdout.flush(); os._exit(1)
         print("no alerts")
     elif cmd in ("spawn", "launch"):
+        reg = load_reg()
+        parent = reg.get(ME, {})
+        if parent.get("role") == "worker":
+            sys.exit("worker sessions cannot spawn agents; ask the parent orchestrator")
+        if cmd == "spawn" and parent.get("orchestrator_depth", 0) >= 1:
+            sys.exit("child orchestrators must launch workers through it2s launch")
         if cmd == "launch":
+            role, approval_file = "worker", None
+            if a[:2] == ["--role", "orchestrator"]:
+                role, a = "orchestrator", a[2:]
+                if a[:1] != ["--approval-file"] or len(a) < 3:
+                    sys.exit("child orchestrator requires --approval-file <private-json>")
+                approval_file, a = a[1], a[2:]
             if len(a) not in (5, 6): sys.exit("usage: it2s launch <name> claude|codex <model> <effort> <task-file> [cwd]")
             if not ME: sys.exit("launch needs an iTerm parent session to own the child")
             name, agent, model, effort, task_file = a[:5]
+            if role == "orchestrator":
+                if parent.get("parent") and parent.get("role") != "orchestrator":
+                    sys.exit("unclassified child sessions cannot spawn an orchestrator")
+                if parent.get("orchestrator_depth", 0) >= 1:
+                    sys.exit("child orchestrators cannot spawn orchestrators")
+                try:
+                    if os.stat(approval_file).st_mode & 0o077: raise ValueError("approval file must be private (chmod 600)")
+                    approval = json.load(open(approval_file))
+                    if not isinstance(approval, dict) or approval.get("model") != model or not isinstance(approval.get("user_approval"), str) or not approval["user_approval"].strip():
+                        raise ValueError("approval must name the selected model and contain the user's explicit authorization")
+                except (OSError, ValueError, json.JSONDecodeError) as e:
+                    sys.exit(f"invalid child orchestrator approval: {e}")
             cwd = os.path.realpath(a[5] if len(a) == 6 else os.getcwd())
             task_file = os.path.realpath(task_file)
             if agent not in ("claude", "codex") or not os.path.isfile(task_file) or not os.path.isdir(cwd):
@@ -138,23 +214,34 @@ async def main(conn):
         await s.async_set_name(name)
         reg = load_reg(); reg[s.session_id] = dict(name=name, purpose=(task_file if cmd == "launch" else cmdline),
             parent=ME, cwd=cwd, agent=agent, model=(model if cmd == "launch" else ""),
-            effort=(effort if cmd == "launch" else ""), first_seen=time.strftime("%Y-%m-%dT%H:%M:%S"))
-        save_reg(reg)
+            effort=(effort if cmd == "launch" else ""), role=(role if cmd == "launch" else "shell"),
+            orchestrator_depth=((parent.get("orchestrator_depth", 0) + 1) if cmd == "launch" and role == "orchestrator" else parent.get("orchestrator_depth", 0)),
+            approval_file=(approval_file if cmd == "launch" and role == "orchestrator" else ""),
+            first_seen=time.strftime("%Y-%m-%dT%H:%M:%S"))
+        save_reg({s.session_id: reg[s.session_id]})
         await asyncio.sleep(1.0)                      # let the shell start
         await s.async_send_text(f"cd {shlex.quote(cwd)} && {cmdline}"); await asyncio.sleep(0.3); await s.async_send_text("\r")
         print(s.session_id)
     elif cmd == "tag":
         s = await resolve(app, a[0], allow_self=True); reg = load_reg(); r = reg.setdefault(s.session_id, {})
         for kv in a[1:]:
-            k, _, v = kv.partition("="); r[k] = v
-        save_reg(reg); print("tagged " + s.session_id[:8] + " " + json.dumps({k: r[k] for k in [kv.partition("=")[0] for kv in a[1:]]}, ensure_ascii=False))
+            k, sep, v = kv.partition("=")
+            if not sep or k in {"role", "orchestrator_depth", "approval_file"}:
+                sys.exit("tag cannot change role or approval fields")
+            r[k] = v
+        changed = {k: r[k] for k in [kv.partition("=")[0] for kv in a[1:]]}
+        save_reg({s.session_id: changed}); print("tagged " + s.session_id[:8] + " " + json.dumps(changed, ensure_ascii=False))
     else:
         print(__doc__); sys.exit(1)
     sys.stdout.flush(); os._exit(0)   # skip the 10 s websocket-close wait
 
-try:
-    iterm2.run_until_complete(main)
-except SystemExit:
-    raise
-except Exception as e:          # transient "Connection Invalid" from the iTerm2 API: retry once
-    time.sleep(1); sys.stderr.write(f"retry after: {e}\n"); iterm2.run_until_complete(main)
+if len(sys.argv) > 1 and sys.argv[1] == "watch":
+    if len(sys.argv) not in (3, 4): sys.exit("usage: it2s watch <id,id,...> [timeout_s]")
+    watch_registry(sys.argv[2].split(","), float(sys.argv[3]) if len(sys.argv) == 4 else 300)
+else:
+    try:
+        iterm2.run_until_complete(main)
+    except SystemExit:
+        raise
+    except Exception as e:          # transient "Connection Invalid" from the iTerm2 API: retry once
+        time.sleep(1); sys.stderr.write(f"retry after: {e}\n"); iterm2.run_until_complete(main)
