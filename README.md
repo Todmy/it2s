@@ -26,6 +26,8 @@ git clone https://github.com/Todmy/it2s ~/github/it2s
 
 `install.sh` links `it2s` and `it2s-hook` into `~/.local/bin` and ends by printing how many iTerm2 sessions it can see. If it finds no it2s plugin in `~/.codex`, it also links the skills into `~/.codex/skills/` and merges the hooks into `~/.codex/hooks.json` (idempotent, safe to rerun).
 
+It also installs `it2s-quota` and `it2s-route`. Routing needs `TYPESAFE_API_KEY` in the manager's environment. The model catalog and benchmark snapshot are stored in `data/` as of 2026-09-23; refresh them as a deliberate source update, not on every launch.
+
 ### Step 2a — Claude Code
 
 ```bash
@@ -33,7 +35,7 @@ claude plugin marketplace add Todmy/it2s
 claude plugin install it2s@it2s
 ```
 
-That registers the `it2s-watch` skill, the `/it2s:it2s-ops` skill, and 7 hooks that feed the session registry. Restart open `claude` sessions so their hooks reload.
+That registers `it2s-watch`, `/it2s:it2s-ops`, `/it2s:it2s-spawn`, and 7 hooks that feed the session registry. Restart open `claude` sessions so their hooks reload.
 
 ### Step 2b — Codex
 
@@ -42,7 +44,7 @@ codex plugin marketplace add Todmy/it2s --ref main
 codex plugin add it2s@it2s
 ```
 
-That registers the same two skills (`$it2s-watch`, `$it2s-ops` in the `$` menu) and the same hooks. Codex has no slash commands: `$name` inserts a skill, and that is how you run one ops cycle. Hooks must be enabled in `~/.codex/config.toml`:
+That registers the same three skills (`$it2s-watch`, `$it2s-ops`, `$it2s-spawn` in the `$` menu) and the same hooks. Codex has no slash commands: `$name` inserts a skill, and that is how you run one ops cycle. Hooks must be enabled in `~/.codex/config.toml`:
 
 ```toml
 [features]
@@ -59,6 +61,8 @@ it2s status          # one row per iTerm2 tab; agent tabs show busy / idle / wai
 
 Open a second tab, start `claude` or `codex`, and in the first tab ask your agent: *"what is the other tab doing?"* It should run `it2s list` and `it2s read` on its own. Then try `/it2s:it2s-ops` (Claude) or `$it2s-ops` (Codex) for one supervisor cycle.
 
+For a short new-agent request, ask *"зроби рев’ю цього PR окремим агентом"* or invoke `/it2s:it2s-spawn` / `$it2s-spawn`. The skill checks account quotas, routes with Jev, launches an interactive tab, and remains responsible for its questions and outcome. Explicit autonomous requests give the child manager `$autonomous-dev` / `/autonomous-dev`; Sandcastle requires separate image and credential checks. The command layer is `it2s-quota`, `it2s-route TASK_FILE --providers claude,codex`, and `it2s launch NAME PROVIDER MODEL EFFORT TASK_FILE [CWD]`.
+
 ### Update / uninstall
 
 ```bash
@@ -67,13 +71,15 @@ claude plugin marketplace update it2s && claude plugin update it2s@it2s   # Clau
 codex plugin marketplace upgrade it2s && codex plugin add it2s@it2s       # Codex
 ```
 
-Uninstall: `claude plugin uninstall it2s@it2s`, `codex plugin remove it2s@it2s`, `rm ~/.local/bin/it2s ~/.local/bin/it2s-hook`. Plugin-less installs also: delete the `it2s-hook` entries from `~/.codex/hooks.json` and `rm ~/.codex/skills/it2s-watch ~/.codex/skills/it2s-ops`.
+Uninstall: `claude plugin uninstall it2s@it2s`, `codex plugin remove it2s@it2s`, `rm ~/.local/bin/it2s ~/.local/bin/it2s-hook ~/.local/bin/it2s-quota ~/.local/bin/it2s-route`. Plugin-less installs also: delete the `it2s-hook` entries from `~/.codex/hooks.json` and `rm ~/.codex/skills/it2s-watch ~/.codex/skills/it2s-ops ~/.codex/skills/it2s-spawn`.
 
 ## What you get
 
 | Piece | Where | Does |
 |---|---|---|
-| `it2s` CLI | `bin/` | `list`, `read`, `send`, `key`, `wait`, `status`, `alerts`, `spawn`, `tag` |
+| `it2s` CLI | `bin/` | `list`, `read`, `send`, `key`, `wait`, `status`, `alerts`, `spawn`, `launch`, `tag` |
+| `it2s-route` + dated catalog | `bin/`, `data/` | TypeSafe Jev chooses model and effort from the quota-eligible models; no per-request catalog refresh |
+| `it2s-spawn` skill | `skills/it2s-spawn` | short natural-language agent requests, ordinary vs Sandcastle mode, supervised handoff |
 | registry hook | `bin/it2s-hook` + `hooks/` | every session writes agent, cwd, last prompt, last answer, waiting/error state to `~/.local/state/it2s/sessions.json` |
 | `it2s-watch` skill | `skills/it2s-watch` | how an agent should watch and drive other sessions (busy/idle table, supervisor loop, pitfalls) |
 | `it2s-ops` skill: `/it2s:it2s-ops` (Claude) · `$it2s-ops` (Codex) | `skills/it2s-ops` | one supervisor cycle; `/loop 5m /it2s:it2s-ops` makes it the "god session" |

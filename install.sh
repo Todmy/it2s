@@ -9,10 +9,12 @@ HERE="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 mkdir -p ~/.local/bin ~/.local/state/it2s
 ln -sfn "$HERE/bin/it2s" ~/.local/bin/it2s
 ln -sfn "$HERE/bin/it2s-hook" ~/.local/bin/it2s-hook
+ln -sfn "$HERE/bin/it2s-route" ~/.local/bin/it2s-route
+ln -sfn "$HERE/bin/it2s-quota" ~/.local/bin/it2s-quota
 echo "CLI: ~/.local/bin/it2s -> $HERE/bin/it2s  (make sure ~/.local/bin is on PATH)"
 if [[ -d ~/.codex && ! -d ~/.codex/plugins/cache/it2s ]]; then
   mkdir -p ~/.codex/skills
-  for s in it2s-watch it2s-ops; do [[ -e ~/.codex/skills/$s ]] || ln -s "$HERE/skills/$s" ~/.codex/skills/$s; done
+  for s in it2s-watch it2s-ops it2s-spawn; do [[ -e ~/.codex/skills/$s ]] || ln -s "$HERE/skills/$s" ~/.codex/skills/$s; done
   python3 - "$HERE/hooks/hooks-codex.json" <<'PY'
 import json, os, sys
 src = json.load(open(sys.argv[1]))["hooks"]; path = os.path.expanduser("~/.codex/hooks.json")
@@ -29,6 +31,6 @@ PY
   echo "Codex without the plugin: skills linked into ~/.codex/skills, hooks merged. Enable hooks in ~/.codex/config.toml: [features] hooks = true"
 fi
 if [[ -d ~/.claude && ! -d ~/.claude/plugins/cache/it2s ]]; then
-  echo "Claude Code without the plugin? Then also: ln -s $HERE/skills/it2s-watch $HERE/skills/it2s-ops ~/.claude/skills/ ; and merge hooks/hooks.json into ~/.claude/settings.json with \${CLAUDE_PLUGIN_ROOT} replaced by $HERE"
+  echo "Claude Code without the plugin? Then also: ln -s $HERE/skills/it2s-watch $HERE/skills/it2s-ops $HERE/skills/it2s-spawn ~/.claude/skills/ ; and merge hooks/hooks.json into ~/.claude/settings.json with \${CLAUDE_PLUGIN_ROOT} replaced by $HERE"
 fi
 it2s list >/dev/null && echo "it2s works: $(it2s list | wc -l | tr -d ' ') sessions visible" || echo "it2s cannot reach iTerm2: enable Settings → General → Magic → Python API"
