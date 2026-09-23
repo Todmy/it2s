@@ -75,6 +75,7 @@ Every Claude Code and Codex session writes its own state through the `it2s-hook`
 | Everything at a glance | `it2s status` → one row per session: name, agent, state (`busy` / `idle` / `waiting:permission` / `waiting:input` / `dead`), minutes since last event, last answer or waiting text or error |
 | Only what needs attention | `it2s alerts [idle_min]` → same rows filtered to waiting, error, dead, or idle ≥ N min (default 15). Exit 1 when non-empty, so it works as a gate. |
 | Start a worker | `it2s spawn <name> <cmd...>` → new tab in the caller's cwd, runs cmd, registers purpose + parent = caller, prints session id |
+| Route and supervise a new agent | `$it2s-spawn` / `/it2s:it2s-spawn` → model choice, quota check, `it2s launch`, child ownership |
 | Label a session | `it2s tag <match> purpose="..." name=...` → fields the supervisor reads back in `status` |
 
 A supervisor cycle is `alerts` → `read` each alerted id → one action or one escalation per session. `/it2s:it2s-ops` (Claude) and `$it2s-ops` (Codex) are that cycle written down; `/loop 5m /it2s:it2s-ops` runs it continuously.

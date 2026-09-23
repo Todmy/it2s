@@ -1,0 +1,39 @@
+{
+  "snapshot_date": "2026-09-23",
+  "coding_agent_index": {
+    "source": "https://artificialanalysis.ai/agents/coding-agents/comparisons/claude-code-vs-codex",
+    "additional_source": "https://artificialanalysis.ai/agents/coding-agents/comparisons/codex-vs-kimi-code-cli",
+    "version": "1.5",
+    "warning": "Measures model plus agent harness at the listed effort. It is not a PR-review benchmark or an isolated model score.",
+    "variants": [
+      {"model": "claude-fable-5-1", "effort": "max", "score": 62, "cost_usd_per_task": 12.39, "minutes_per_task": 34.8, "note": "with fallback"},
+      {"model": "claude-opus-5", "effort": "max", "score": 60, "cost_usd_per_task": 10.79, "minutes_per_task": 41.9},
+      {"model": "gpt-6-astra", "effort": "max", "score": 62, "cost_usd_per_task": 7.47, "minutes_per_task": 29.4},
+      {"model": "gpt-6-sol", "effort": "max", "score": 57, "cost_usd_per_task": 2.99, "minutes_per_task": 22.3},
+      {"model": "gpt-6-luna", "effort": "max", "score": 41, "cost_usd_per_task": 0.18, "minutes_per_task": 21.4},
+      {"model": "gpt-5.6-sol", "effort": "max", "score": 55, "cost_usd_per_task": 6.35, "minutes_per_task": 20.6}
+    ]
+  },
+  "opus_5_5": {
+    "source": "https://artificialanalysis.ai/articles/claude-opus-5-5/",
+    "intelligence_index_max": 58,
+    "terminal_bench_4_percent": 59.6,
+    "warning": "General Intelligence Index and Terminal-Bench figures are indirect evidence for PR review; Opus 5.5 is absent from the Coding Agent Index comparison above."
+  },
+  "general_intelligence_index": {
+    "warning": "Model-level index; indirect for coding-agent execution and PR review. Compare only the listed effort variants.",
+    "variants": [
+      {"model": "claude-fable-5-1", "effort": "low", "score": 47, "source": "https://artificialanalysis.ai/models/comparisons/claude-fable-5-1-low-vs-claude-sonnet-5"},
+      {"model": "claude-fable-5-1", "effort": "medium", "score": 49, "source": "https://artificialanalysis.ai/models/comparisons/claude-fable-5-1-medium-vs-claude-sonnet-5"},
+      {"model": "claude-fable-5-1", "effort": "high", "score": 51, "source": "https://artificialanalysis.ai/models/comparisons/claude-fable-5-1-high-vs-claude-sonnet-5-high"},
+      {"model": "claude-fable-5-1", "effort": "max", "score": 53, "source": "https://artificialanalysis.ai/models/comparisons/claude-fable-5-1-vs-claude-sonnet-5"},
+      {"model": "claude-sonnet-5", "effort": "max", "score": 38, "source": "https://artificialanalysis.ai/models/comparisons/claude-fable-5-1-vs-claude-sonnet-5"},
+      {"model": "gpt-6-astra", "effort": "max", "score": 53, "source": "https://artificialanalysis.ai/models/comparisons/gpt-6-astra-vs-claude-fable-5-1"},
+      {"model": "claude-opus-5-5", "effort": "max", "score": 58, "source": "https://artificialanalysis.ai/articles/claude-opus-5-5/"}
+    ]
+  },
+  "pr_review": {
+    "source": "https://www.codereviewbench.com/leaderboard",
+    "warning": "No directly comparable current Claude Opus 5.5 or GPT-6 PR-review score was available in this snapshot. Do not invent one."
+  }
+}

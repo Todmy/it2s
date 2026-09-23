@@ -1,0 +1,109 @@
+#!/usr/bin/env python3
+"""Ask TypeSafe Jev to choose a model and effort for an it2s worker.
+
+The manager checks account quota and passes only eligible providers. This command
+does not spawn anything; its JSON result is a reviewable launch decision.
+"""
+import argparse
+import json
+import os
+import pathlib
+import sys
+import urllib.error
+import urllib.request
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+CATALOG = json.loads((ROOT / "data/models.json").read_text())
+BENCHMARKS = json.loads((ROOT / "data/benchmarks.json").read_text())
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("task_file", type=pathlib.Path, help="Full task/PR context, without credentials")
+    parser.add_argument("--providers", required=True, help="Comma-separated quota-verified providers: claude,codex")
+    parser.add_argument("--model", help="Explicit user model override")
+    parser.add_argument("--effort", help="Explicit user effort override")
+    parser.add_argument("--exclude-model", action="append", default=[], help="Model blocked by a scoped live quota")
+    args = parser.parse_args()
+    providers = set(args.providers.split(","))
+    if not providers or not providers <= {"claude", "codex"}:
+        parser.error("--providers must contain claude and/or codex")
+    task = args.task_file.read_text().strip()
+    if args.task_file.stat().st_mode & 0o077:
+        parser.error("task file must be private (chmod 600)")
+    if not task:
+        parser.error("task file is empty")
+    if len(task.encode()) > 100_000:
+        parser.error("task context exceeds the conservative 100 kB Jev budget; condense only the routing context")
+
+    eligible = [m for m in CATALOG["models"] if m["provider"] in providers and m["id"] not in args.exclude_model]
+    if args.model:
+        selected = next((m for m in eligible if m["id"] == args.model), None)
+        if not selected:
+            parser.error("requested model is absent from the quota-verified provider catalog")
+        effort = args.effort or ("medium" if "medium" in selected["efforts"] else selected["efforts"][0])
+        if effort not in selected["efforts"]:
+            parser.error("requested effort is unsupported by the selected model")
+        print(json.dumps({"provider": selected["provider"], "model": selected["id"], "effort": effort, "source": "user-override"}))
+        return
+    if args.effort:
+        parser.error("--effort requires --model; otherwise Jev chooses the pair")
+
+    key = os.environ.get("TYPESAFE_API_KEY")
+    if not key:
+        parser.error("TYPESAFE_API_KEY is unavailable; cannot make the requested Jev decision")
+
+    benchmark_by_pair = {(v["model"], v["effort"]): v for v in BENCHMARKS["coding_agent_index"]["variants"]}
+    intelligence_by_pair = {(v["model"], v["effort"]): v for v in BENCHMARKS["general_intelligence_index"]["variants"]}
+    criteria = {}
+    for model in eligible:
+        if not model["recommended"]:
+            continue
+        for effort in model["efforts"]:
+            if effort not in {"low", "medium", "high", "max", "default"}:
+                continue
+            name = model["id"] + "/" + effort
+            bench = benchmark_by_pair.get((model["id"], effort))
+            intelligence = intelligence_by_pair.get((model["id"], effort))
+            evidence = (f"Coding Agent Index {bench['score']}, ${bench['cost_usd_per_task']}/task, "
+                        f"{bench['minutes_per_task']} min/task; {bench.get('note', '')}" if bench else "No directly measured Coding Agent Index for this exact model/effort pair")
+            if intelligence:
+                evidence += f"; general Intelligence Index {intelligence['score']} (indirect for coding/review)"
+            criteria[name] = f"{model['provider']}: {model['description']} Suitable for: {model['use_when']} {evidence}"
+    criteria["no_fit"] = "No listed candidate can do the task well; manager must inspect and decide."
+    if len(criteria) == 1:
+        sys.exit("No quota-eligible current model/effort candidates; no agent launched")
+
+    payload = {
+        "model": "jev-latest",
+        "state": {
+            "task": task,
+            "priority": "Choose the smallest adequate model and effort for quality and time. Prefer corporate Lumina Claude on a close choice when available. User-selected models are handled before this request.",
+            "benchmark_scope": BENCHMARKS["coding_agent_index"]["warning"],
+            "review_scope": BENCHMARKS["pr_review"]["warning"],
+            "benchmark_snapshot_date": BENCHMARKS["snapshot_date"],
+        },
+        "questions": {"route": {"type": "choice", "instructions": "Which exact model/effort pair best completes `task` with adequate quality and shortest practical time? Use benchmark evidence only for the exact pair measured; infer cautiously for other pairs. Choose no_fit only if none can handle the task.", "criteria": criteria}},
+    }
+    request = urllib.request.Request("https://api.typesafe.ai/v1/systemone", data=json.dumps(payload).encode(),
+                                     headers={"Authorization": "Bearer " + key, "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            result = json.load(response)
+    except urllib.error.HTTPError as error:
+        sys.exit(f"Jev routing failed: HTTP {error.code}; no agent launched")
+    except (urllib.error.URLError, TimeoutError, ValueError) as error:
+        sys.exit(f"Jev routing failed: {type(error).__name__}; no agent launched")
+    answer = result.get("answers", {}).get("route", {})
+    choice = answer.get("choice")
+    if choice not in criteria or choice == "no_fit":
+        sys.exit("Jev returned no usable model/effort pair; no agent launched")
+    model_id, effort = choice.rsplit("/", 1)
+    model = next(m for m in eligible if m["id"] == model_id)
+    print(json.dumps({"provider": model["provider"], "model": model_id, "effort": effort,
+                      "source": "jev", "confidence": answer.get("confidence"),
+                      "probabilities": answer.get("probabilities"), "benchmark_snapshot_date": BENCHMARKS["snapshot_date"]}))
+
+
+if __name__ == "__main__":
+    main()

@@ -7,10 +7,11 @@
   it2s status                  one table: name | agent | state | idle | waiting | last message  (registry + live)
   it2s alerts [idle_min=15]    only problems: permission, error, input-wait, idle>N, dead. Exit 1 if any.
   it2s spawn <name> <cmd...>   new tab, cd to cwd, run cmd, register purpose/parent; prints session id
+  it2s launch <name> claude|codex <model> <effort> <task-file> [cwd]   supervised interactive agent
   it2s tag <id|substr> key=value ...   set registry fields (purpose, name, parent)
 Match = full id or substring of id / title / job name. Never matches itself for send.
 """
-import iterm2, os, re, sys, time, asyncio, json
+import iterm2, os, re, sys, time, asyncio, json, shlex
 ME = os.environ.get("ITERM_SESSION_ID", "").split(":")[-1]
 
 async def rows(app):
@@ -107,15 +108,40 @@ async def main(conn):
                (x["state"].startswith("waiting") or x["state"] == "dead" or x["error"] or (x["state"] == "idle" and x["idle"] is not None and x["idle"] >= lim))]
         if bad: print_table(bad); sys.stdout.flush(); os._exit(1)
         print("no alerts")
-    elif cmd == "spawn":
-        name, cmdline = a[0], " ".join(a[1:])
+    elif cmd in ("spawn", "launch"):
+        if cmd == "launch":
+            if len(a) not in (5, 6): sys.exit("usage: it2s launch <name> claude|codex <model> <effort> <task-file> [cwd]")
+            if not ME: sys.exit("launch needs an iTerm parent session to own the child")
+            name, agent, model, effort, task_file = a[:5]
+            cwd = os.path.realpath(a[5] if len(a) == 6 else os.getcwd())
+            task_file = os.path.realpath(task_file)
+            if agent not in ("claude", "codex") or not os.path.isfile(task_file) or not os.path.isdir(cwd):
+                sys.exit("launch requires an agent, existing task file, and existing cwd")
+            if os.stat(task_file).st_mode & 0o077:
+                sys.exit("launch task file must be private (chmod 600)")
+            if agent == "claude" and not (cwd == os.path.expanduser("~/lumina") or cwd.startswith(os.path.expanduser("~/lumina/"))):
+                sys.exit("Claude account outside ~/lumina is not verified by it2s-quota; choose an explicit account/mechanism")
+            if agent == "claude":
+                argv = [os.path.expanduser("~/lumina/lumina-claude/lumina-claude"), "interactive", "--model", model,
+                        "--prompt-file", task_file, "-C", cwd]
+                if effort != "default": argv.extend(["--effort", effort])
+                cmdline = shlex.join(argv)
+            else:
+                prompt = '"$(cat ' + shlex.quote(task_file) + ')"'
+                argv = ["codex", "--model", model, "--config", "model_reasoning_effort=" + json.dumps(effort)]
+                cmdline = shlex.join(argv) + " " + prompt
+        else:
+            if len(a) < 2: sys.exit("usage: it2s spawn <name> <cmd...>")
+            name, cmdline, cwd, agent = a[0], " ".join(a[1:]), os.getcwd(), ""
         win = app.current_terminal_window or app.terminal_windows[0]
         tab = await win.async_create_tab(); s = tab.current_session
         await s.async_set_name(name)
-        reg = load_reg(); reg[s.session_id] = dict(name=name, purpose=cmdline, parent=ME, cwd=os.getcwd(), first_seen=time.strftime("%Y-%m-%dT%H:%M:%S"))
+        reg = load_reg(); reg[s.session_id] = dict(name=name, purpose=(task_file if cmd == "launch" else cmdline),
+            parent=ME, cwd=cwd, agent=agent, model=(model if cmd == "launch" else ""),
+            effort=(effort if cmd == "launch" else ""), first_seen=time.strftime("%Y-%m-%dT%H:%M:%S"))
         save_reg(reg)
         await asyncio.sleep(1.0)                      # let the shell start
-        await s.async_send_text(f"cd {os.getcwd()!r} && {cmdline}"); await asyncio.sleep(0.3); await s.async_send_text("\r")
+        await s.async_send_text(f"cd {shlex.quote(cwd)} && {cmdline}"); await asyncio.sleep(0.3); await s.async_send_text("\r")
         print(s.session_id)
     elif cmd == "tag":
         s = await resolve(app, a[0], allow_self=True); reg = load_reg(); r = reg.setdefault(s.session_id, {})

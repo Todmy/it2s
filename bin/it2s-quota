@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+"""Return quota-verified host providers without exposing account identifiers."""
+import datetime as dt
+import json
+import pathlib
+import subprocess
+
+MODELS = json.loads((pathlib.Path(__file__).resolve().parents[1] / "data/models.json").read_text())["models"]
+
+
+def fetch(*command):
+    result = subprocess.run(command, capture_output=True, text=True, timeout=20)
+    if result.returncode:
+        raise RuntimeError("quota command failed")
+    return json.loads(result.stdout)
+
+
+def fresh(timestamp):
+    stamp = dt.datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+    return 0 <= (dt.datetime.now(dt.timezone.utc) - stamp).total_seconds() <= 300
+
+
+def claude():
+    try:
+        accounts = fetch("cswap", "list", "--json")["accounts"]
+        account = next(a for a in accounts if a.get("alias", "").lower() == "lumina" and a.get("isOrganization"))
+        if account.get("usageStatus") != "ok" or account.get("usageAgeSeconds", 999999) > 300:
+            return "unknown", "corporate Claude usage missing or stale", []
+        usage = account["usage"]
+        windows = [usage.get("fiveHour"), usage.get("sevenDay")]
+        if any(not isinstance(w, dict) or not isinstance(w.get("pct"), (int, float)) for w in windows):
+            return "unknown", "corporate Claude quota window missing", []
+        if any(w["pct"] >= 100 for w in windows):
+            return "exhausted", "corporate Claude subscription limit reached", []
+        exhausted = [s.get("name", "").lower() for s in usage.get("scoped", []) if isinstance(s.get("pct"), (int, float)) and s["pct"] >= 100]
+        if any(not family or family not in ("opus", "fable", "sonnet", "haiku") for family in exhausted):
+            return "unknown", "unrecognized exhausted Claude model-specific scope", []
+        excluded = [m["id"] for m in MODELS if m["provider"] == "claude" and any(family in m["id"] for family in exhausted)]
+        return "available", "corporate Claude subscription windows below 100%", excluded
+    except (RuntimeError, subprocess.TimeoutExpired, ValueError, KeyError, StopIteration, TypeError, OSError):
+        return "unknown", "corporate Claude quota check failed", []
+
+
+def codex():
+    try:
+        entries = fetch("codexbar", "usage", "--provider", "codex", "--json")
+        entry = next(e for e in entries if e.get("provider") == "codex" and isinstance(e.get("usage"), dict))
+        usage = entry["usage"]
+        if not usage.get("identity", {}).get("accountEmail", "").lower().endswith("@luminatech.co"):
+            return "unknown", "Codex account is not the corporate Lumina account", []
+        if not fresh(usage["updatedAt"]) or usage.get("dataConfidence") != "exact":
+            return "unknown", "Codex quota is stale or uncertain", []
+        windows = [usage.get("primary"), usage.get("secondary"), usage.get("tertiary")]
+        windows = [w for w in windows if isinstance(w, dict)]
+        if not windows or any(not isinstance(w.get("usedPercent"), (int, float)) for w in windows):
+            return "unknown", "Codex subscription window missing", []
+        if any(w["usedPercent"] >= 100 for w in windows):
+            return "exhausted", "Codex subscription limit reached", []
+        return "available", "Codex subscription windows below 100%", []
+    except (RuntimeError, subprocess.TimeoutExpired, ValueError, KeyError, StopIteration, TypeError, OSError):
+        return "unknown", "Codex quota check failed", []
+
+
+if __name__ == "__main__":
+    result = dict(zip(("claude", "codex"), (claude(), codex())))
+    print(json.dumps({"providers": [p for p, (state, _, _) in result.items() if state == "available"],
+                      "exclude_models": sorted({m for _, _, models in result.values() for m in models}),
+                      "status": {p: {"state": state, "reason": reason} for p, (state, reason, _) in result.items()}}))

@@ -6,6 +6,8 @@ allowed-tools: Bash(it2s:*)
 
 You are the operator session. The user talks only to you; every other iTerm2 tab is a worker you oversee. Mechanics are in the `it2s-watch` skill. Run exactly ONE cycle now:
 
+For an agent launched through `it2s-spawn`, the spawning parent remains responsible until completion. Use its exact session ID; questions from a Sandcastle manager child go through that parent. A single quiet ops cycle is not a completion receipt.
+
 1. `it2s alerts 15`. Only problem sessions come back: waiting for permission, waiting for input, error on screen, idle 15 min or more, dead. If it prints `no alerts`, reply with one line built from `it2s status`: `all quiet: N busy, M idle` and stop.
 2. For each alerted session, `it2s read <id> 30` before deciding anything. Classify with the skill's busy/idle table.
 3. One action per session per cycle:

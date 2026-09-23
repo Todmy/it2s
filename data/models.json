@@ -1,0 +1,244 @@
+{
+  "snapshot_date": "2026-09-23",
+  "catalog_source": [
+    "~/.claude/cache/model-catalog/*.json",
+    "~/.codex/models_cache.json"
+  ],
+  "models": [
+    {
+      "id": "claude-opus-5-5",
+      "provider": "claude",
+      "description": "Most capable for ambitious work",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "recommended": true,
+      "use_when": "Ambiguous architecture, high-stakes reviews, or difficult multi-file reasoning when Sonnet/Fable may miss interactions."
+    },
+    {
+      "id": "claude-fable-5-1",
+      "provider": "claude",
+      "description": "For your toughest challenges",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "recommended": true,
+      "use_when": "Hard implementation and broad PR review with strong coding-agent evidence; max only when complexity earns it."
+    },
+    {
+      "id": "claude-sonnet-5",
+      "provider": "claude",
+      "description": "Most efficient for everyday tasks",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "recommended": true,
+      "use_when": "Routine feature implementation, focused PR review, and daily coding where speed matters."
+    },
+    {
+      "id": "claude-haiku-4-5-20251001",
+      "provider": "claude",
+      "description": "Fastest for quick answers",
+      "efforts": [
+        "default"
+      ],
+      "recommended": true,
+      "use_when": "Small searches, summaries, and mechanical edits; avoid complex autonomous implementation."
+    },
+    {
+      "id": "claude-opus-5",
+      "provider": "claude",
+      "description": "Older Claude model; use only when explicitly requested or required for compatibility.",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "recommended": false,
+      "use_when": "Older measured coding-agent option; use when pinned or current frontier is unavailable."
+    },
+    {
+      "id": "claude-fable-5",
+      "provider": "claude",
+      "description": "Older Claude model; use only when explicitly requested or required for compatibility.",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "recommended": false,
+      "use_when": "Older difficult-task option; use only for reproducibility or explicit request."
+    },
+    {
+      "id": "claude-opus-4-8",
+      "provider": "claude",
+      "description": "Older Claude model; use only when explicitly requested or required for compatibility.",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "recommended": false,
+      "use_when": "Legacy complex reasoning; use only for reproducibility or explicit request."
+    },
+    {
+      "id": "claude-opus-4-7",
+      "provider": "claude",
+      "description": "Older Claude model; use only when explicitly requested or required for compatibility.",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "recommended": false,
+      "use_when": "Legacy complex reasoning; use only for reproducibility or explicit request."
+    },
+    {
+      "id": "claude-opus-4-6",
+      "provider": "claude",
+      "description": "Older Claude model; use only when explicitly requested or required for compatibility.",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "max"
+      ],
+      "recommended": false,
+      "use_when": "Legacy complex reasoning; use only for reproducibility or explicit request."
+    },
+    {
+      "id": "claude-sonnet-4-6",
+      "provider": "claude",
+      "description": "Older Claude model; use only when explicitly requested or required for compatibility.",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "max"
+      ],
+      "recommended": false,
+      "use_when": "Legacy routine coding; use only for reproducibility or explicit request."
+    },
+    {
+      "id": "gpt-6-astra",
+      "provider": "codex",
+      "description": "Frontier intelligence for the most demanding work.",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+        "ultra"
+      ],
+      "recommended": true,
+      "use_when": "Demanding architecture, deep debugging, and broad PR reviews when strongest reasoning is justified."
+    },
+    {
+      "id": "gpt-6-sol",
+      "provider": "codex",
+      "description": "Workhorse model for coding and everyday work.",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+        "ultra"
+      ],
+      "recommended": true,
+      "use_when": "Default Codex coding worker for medium implementation and review tasks."
+    },
+    {
+      "id": "gpt-6-luna",
+      "provider": "codex",
+      "description": "Fast and affordable model for easier tasks.",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "recommended": true,
+      "use_when": "Quick focused changes, read-only review, or narrow tasks where latency matters."
+    },
+    {
+      "id": "gpt-5.6-sol",
+      "provider": "codex",
+      "description": "Older coding model for complex work.",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+        "ultra"
+      ],
+      "recommended": false,
+      "use_when": "Older measured complex coding option; use if pinned or needed for reproducibility."
+    },
+    {
+      "id": "gpt-5.6-terra",
+      "provider": "codex",
+      "description": "Older balanced model for straightforward work.",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+        "ultra"
+      ],
+      "recommended": false,
+      "use_when": "Older straightforward work; use if pinned or needed for reproducibility."
+    },
+    {
+      "id": "gpt-5.6-luna",
+      "provider": "codex",
+      "description": "Older fast and efficient model.",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "recommended": false,
+      "use_when": "Older lightweight work; use if pinned or needed for reproducibility."
+    },
+    {
+      "id": "gpt-5.5",
+      "provider": "codex",
+      "description": "Legacy coding model.",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh"
+      ],
+      "recommended": false,
+      "use_when": "Legacy coding; use only for reproducibility or explicit request."
+    }
+  ]
+}
